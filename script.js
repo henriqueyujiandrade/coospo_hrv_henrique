@@ -1301,6 +1301,7 @@ function buildExportJSON() {
 }
 
 async function saveSessionToDatabase(data) {
+  console.log('[Export] processando envio para o banco...');
   try {
     const res = await fetch('/api/save-session', {
       method: 'POST',
@@ -1309,9 +1310,9 @@ async function saveSessionToDatabase(data) {
     });
     const json = await res.json();
     if (!res.ok) throw new Error(json.error ?? res.statusText);
-    console.info('[Export] Sessão salva no banco. session_id:', json.session_id);
+    console.log('[Export] dado salvo no banco. session_id:', json.session_id);
   } catch (err) {
-    console.error('[Export] Falha ao salvar no banco:', err.message);
+    console.error('[Export] erro no banco:', err.message);
   }
 }
 

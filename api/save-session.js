@@ -1,6 +1,12 @@
 import { neon } from '@neondatabase/serverless';
 
-const sql = neon(process.env.POSTGRES_URL);
+let sql;
+try {
+  sql = neon(process.env.POSTGRES_URL);
+  console.log('[save-session] conectado ao banco');
+} catch (err) {
+  console.error('[save-session] falha conectando ao banco:', err.message);
+}
 
 export default async function handler(req, res) {
   if (req.method !== 'POST') {
@@ -12,6 +18,8 @@ export default async function handler(req, res) {
   if (!config || !beats || !metricas) {
     return res.status(400).json({ error: 'Payload inválido' });
   }
+
+  console.log('[save-session] processando');
 
   try {
     await sql`
@@ -34,9 +42,10 @@ export default async function handler(req, res) {
       RETURNING id
     `;
 
+    console.log('[save-session] dado salvo no banco. session_id:', session.id);
     return res.status(200).json({ ok: true, session_id: session.id });
   } catch (err) {
-    console.error('[save-session]', err);
+    console.error('[save-session] erro no banco:', err.message);
     return res.status(500).json({ error: err.message });
   }
 }
