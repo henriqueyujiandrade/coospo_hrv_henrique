@@ -102,6 +102,10 @@ const elWLPlaceholder = document.getElementById('wl-placeholder');
 const elBtnProtocol      = document.getElementById('btn-protocol');
 const elModalProtocol    = document.getElementById('modal-protocol');
 const elModalClose       = document.getElementById('modal-close');
+const elBtnSessions      = document.getElementById('btn-sessions');
+const elModalSessions    = document.getElementById('modal-sessions');
+const elModalSessionsClose = document.getElementById('modal-sessions-close');
+const elSessionsList     = document.getElementById('sessions-list');
 const elBtnStartProtocol = document.getElementById('btn-start-protocol');
 const elProtoBPM         = document.getElementById('proto-bpm');
 const elProtoBaseline    = document.getElementById('proto-baseline');
@@ -1300,6 +1304,55 @@ function buildExportJSON() {
   };
 }
 
+async function loadSessions() {
+  elSessionsList.innerHTML = '<span class="sessions-empty">Carregando...</span>';
+  try {
+    const res  = await fetch('/api/get-sessions');
+    const json = await res.json();
+    if (!res.ok) throw new Error(json.error ?? res.statusText);
+
+    const { sessions } = json;
+    if (!sessions.length) {
+      elSessionsList.innerHTML = '<span class="sessions-empty">Nenhuma sessão salva ainda.</span>';
+      return;
+    }
+
+    elSessionsList.innerHTML = sessions.map(s => {
+      const date  = new Date(s.config.exportado_em);
+      const dateStr = date.toLocaleDateString('pt-BR') + ' ' + date.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' });
+      const beats   = s.beats.rows?.length ?? 0;
+      const metricas = s.metricas.rows?.length ?? 0;
+      return `
+        <div class="session-card">
+          <div class="session-card-header">
+            <span class="session-card-date">${dateStr}</span>
+            <span class="session-card-id">#${s.id}</span>
+          </div>
+          <div class="session-card-stats">
+            <div class="session-stat">
+              <span class="session-stat-label">Batimentos</span>
+              <span class="session-stat-value">${beats}</span>
+            </div>
+            <div class="session-stat">
+              <span class="session-stat-label">Métricas</span>
+              <span class="session-stat-value">${metricas}</span>
+            </div>
+            <div class="session-stat">
+              <span class="session-stat-label">Janela</span>
+              <span class="session-stat-value">${s.config.janela_batimentos} bat.</span>
+            </div>
+            <div class="session-stat">
+              <span class="session-stat-label">Filtro</span>
+              <span class="session-stat-value">${s.config.filtro_anomalias_pct}%</span>
+            </div>
+          </div>
+        </div>`;
+    }).join('');
+  } catch (err) {
+    elSessionsList.innerHTML = `<span class="sessions-empty">Erro ao carregar: ${err.message}</span>`;
+  }
+}
+
 async function saveSessionToDatabase(data) {
   console.log('[Export] processando envio para o banco...');
   try {
@@ -1547,6 +1600,15 @@ function init() {
   elModalClose.addEventListener('click',  () => elModalProtocol.classList.add('hidden'));
   elModalProtocol.addEventListener('click', e => {
     if (e.target === elModalProtocol) elModalProtocol.classList.add('hidden');
+  });
+
+  elBtnSessions.addEventListener('click', () => {
+    elModalSessions.classList.remove('hidden');
+    loadSessions();
+  });
+  elModalSessionsClose.addEventListener('click', () => elModalSessions.classList.add('hidden'));
+  elModalSessions.addEventListener('click', e => {
+    if (e.target === elModalSessions) elModalSessions.classList.add('hidden');
   });
   elBtnStartProtocol.addEventListener('click', () => {
     if (!isConnected) {

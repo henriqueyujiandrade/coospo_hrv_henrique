@@ -19,6 +19,10 @@
         </div>
       </div>
       <div class="header-right">
+        <button class="btn-sessions" id="btn-sessions" aria-label="Ver sessões salvas">
+          <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="2" y="3" width="20" height="14" rx="2"/><line x1="8" y1="21" x2="16" y2="21"/><line x1="12" y1="17" x2="12" y2="21"/></svg>
+          Ver Sessões
+        </button>
         <button class="btn-protocol" id="btn-protocol" aria-label="Abrir configuração do protocolo sonoro">
           <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"/><path d="M15.54 8.46a5 5 0 0 1 0 7.07"/><path d="M19.07 4.93a10 10 0 0 1 0 14.14"/></svg>
           Protocolo Sonoro
@@ -238,6 +242,19 @@
     <footer class="footer">
       HRV Dashboard &mdash; Coospo HW9 &mdash; tempo real via PPG óptico
     </footer>
+
+    <!-- ── Sessions Modal ───────────────────────────────────────── -->
+    <div class="modal-overlay hidden" id="modal-sessions" role="dialog" aria-modal="true" aria-labelledby="modal-sessions-title">
+      <div class="modal modal--sessions">
+        <header class="modal-header">
+          <h2 id="modal-sessions-title">Sessões Salvas</h2>
+          <button class="modal-close" id="modal-sessions-close" aria-label="Fechar modal">&#x2715;</button>
+        </header>
+        <div class="modal-body sessions-body" id="sessions-list">
+          <span class="sessions-empty">Carregando...</span>
+        </div>
+      </div>
+    </div>
 
     <!-- ── Protocol Modal ────────────────────────────────────── -->
     <div class="modal-overlay hidden" id="modal-protocol" role="dialog" aria-modal="true" aria-labelledby="modal-protocol-title">

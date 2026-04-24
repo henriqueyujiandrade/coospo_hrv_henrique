@@ -990,3 +990,120 @@ h1 {
 .protocol-phase.proto-done {
   opacity: 0.38;
 }
+
+/* ─────────────────────────────────────────────────────────────
+   Sessions button
+───────────────────────────────────────────────────────────── */
+.btn-sessions {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  background: transparent;
+  border: 1px solid var(--border-hi);
+  color: var(--text-2);
+  font-family: var(--font-sans);
+  font-size: 12px;
+  font-weight: 500;
+  padding: 7px 14px;
+  border-radius: var(--r-sm);
+  cursor: pointer;
+  transition: color 0.15s, border-color 0.15s, background 0.15s;
+  white-space: nowrap;
+}
+
+.btn-sessions:hover {
+  color: var(--text-1);
+  border-color: var(--cyan);
+  background: var(--cyan-dim);
+}
+
+/* ─────────────────────────────────────────────────────────────
+   Sessions modal
+───────────────────────────────────────────────────────────── */
+.modal--sessions {
+  max-width: 640px;
+}
+
+.sessions-body {
+  max-height: 60vh;
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  padding: 20px 24px;
+}
+
+.sessions-body::-webkit-scrollbar       { width: 4px; }
+.sessions-body::-webkit-scrollbar-track { background: transparent; }
+.sessions-body::-webkit-scrollbar-thumb { background: var(--border-hi); border-radius: 2px; }
+
+.sessions-empty {
+  font-size: 13px;
+  color: var(--text-3);
+  text-align: center;
+  padding: 24px 0;
+  font-family: var(--font-mono);
+}
+
+/* ─────────────────────────────────────────────────────────────
+   Session card
+───────────────────────────────────────────────────────────── */
+.session-card {
+  background: var(--surface-hi);
+  border: 1px solid var(--border);
+  border-radius: var(--r-md);
+  padding: 14px 18px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  transition: border-color 0.15s;
+}
+
+.session-card:hover {
+  border-color: var(--border-hi);
+}
+
+.session-card-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.session-card-date {
+  font-family: var(--font-mono);
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--cyan);
+}
+
+.session-card-id {
+  font-family: var(--font-mono);
+  font-size: 10px;
+  color: var(--text-3);
+}
+
+.session-card-stats {
+  display: flex;
+  gap: 20px;
+}
+
+.session-stat {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.session-stat-label {
+  font-size: 9px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+  color: var(--text-3);
+}
+
+.session-stat-value {
+  font-family: var(--font-mono);
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--text-1);
+}
