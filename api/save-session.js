@@ -1,4 +1,4 @@
-import { neon } from '@neondatabase/serverless';
+const { neon } = require('@neondatabase/serverless');
 
 let sql;
 try {
@@ -8,7 +8,7 @@ try {
   console.error('[save-session] falha conectando ao banco:', err.message);
 }
 
-export default async function handler(req, res) {
+module.exports = async function handler(req, res) {
   if (req.method !== 'POST') {
     return res.status(405).json({ error: 'Method not allowed' });
   }

@@ -2,8 +2,7 @@
   "name": "coospo-hrv-protocol",
   "version": "1.0.0",
   "private": true,
-  "type": "module",
-  "dependencies": {
+"dependencies": {
     "@neondatabase/serverless": "^0.10.0"
   }
 }
