@@ -1,6 +1,6 @@
 import { neon } from '@neondatabase/serverless';
 
-const sql = neon(process.env.DATABASE_URL);
+const sql = neon(process.env.POSTGRES_URL);
 
 export default async function handler(req, res) {
   if (req.method !== 'POST') {
