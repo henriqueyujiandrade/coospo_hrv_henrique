@@ -1,0 +1,992 @@
+/* ─────────────────────────────────────────────────────────────
+   Reset & Tokens
+───────────────────────────────────────────────────────────── */
+*, *::before, *::after {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+:root {
+  /* backgrounds */
+  --bg:          #09090b;
+  --surface:     #111113;
+  --surface-hi:  #18181b;
+
+  /* borders */
+  --border:      #1f1f23;
+  --border-hi:   #2d2d33;
+
+  /* text */
+  --text-1:      #f4f4f5;
+  --text-2:      #71717a;
+  --text-3:      #3f3f46;
+
+  /* accent */
+  --cyan:        #22d3ee;
+  --cyan-dim:    rgba(34, 211, 238, 0.12);
+
+  /* state colors */
+  --green:       #34d399;
+  --green-dim:   rgba(52, 211, 153, 0.14);
+  --yellow:      #fbbf24;
+  --yellow-dim:  rgba(251, 191, 36, 0.14);
+  --red:         #f87171;
+  --red-dim:     rgba(248, 113, 113, 0.14);
+
+  /* typography */
+  --font-sans:   -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto,
+                 "Helvetica Neue", Arial, sans-serif;
+  --font-mono:   "SF Mono", "Cascadia Code", "Fira Code", "Consolas",
+                 "Liberation Mono", monospace;
+
+  /* radii */
+  --r-sm: 8px;
+  --r-md: 12px;
+  --r-lg: 16px;
+}
+
+/* ─────────────────────────────────────────────────────────────
+   Base
+───────────────────────────────────────────────────────────── */
+html, body {
+  height: 100%;
+  background: var(--bg);
+  color: var(--text-1);
+  font-family: var(--font-sans);
+  font-size: 14px;
+  line-height: 1.5;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+/* ─────────────────────────────────────────────────────────────
+   Layout wrapper
+───────────────────────────────────────────────────────────── */
+.app {
+  min-height: 100vh;
+  max-width: 1140px;
+  margin: 0 auto;
+  padding: 0 24px;
+  display: flex;
+  flex-direction: column;
+}
+
+/* ─────────────────────────────────────────────────────────────
+   Header
+───────────────────────────────────────────────────────────── */
+.header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 28px 0 22px;
+  border-bottom: 1px solid var(--border);
+}
+
+.header-left {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+}
+
+/* pulsing live indicator */
+.status-dot {
+  flex-shrink: 0;
+  width: 9px;
+  height: 9px;
+  border-radius: 50%;
+  background: var(--text-3);
+  box-shadow: none;
+  transition: background 0.3s, box-shadow 0.3s;
+}
+
+.status-dot.live {
+  background: var(--green);
+  box-shadow: 0 0 0 3px var(--green-dim);
+  animation: dot-pulse 2s ease-in-out infinite;
+}
+
+.status-dot.beat {
+  background: var(--cyan);
+  box-shadow: 0 0 0 5px var(--cyan-dim);
+}
+
+@keyframes dot-pulse {
+  0%, 100% { opacity: 1;   transform: scale(1);    }
+  50%       { opacity: 0.5; transform: scale(0.8);  }
+}
+
+h1 {
+  font-size: 18px;
+  font-weight: 600;
+  letter-spacing: -0.4px;
+  line-height: 1.2;
+}
+
+.subtitle {
+  display: block;
+  font-size: 12px;
+  color: var(--text-2);
+  letter-spacing: 0.2px;
+  margin-top: 2px;
+}
+
+.header-right {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+/* ── Connect button ─────────────────────────────────── */
+.btn-connect {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  background: transparent;
+  border: 1px solid var(--border-hi);
+  color: var(--text-2);
+  font-family: var(--font-sans);
+  font-size: 12px;
+  font-weight: 500;
+  padding: 7px 14px;
+  border-radius: var(--r-sm);
+  cursor: pointer;
+  transition: color 0.15s, border-color 0.15s, background 0.15s, box-shadow 0.15s;
+  white-space: nowrap;
+}
+
+.btn-connect:hover:not(:disabled) {
+  color: var(--text-1);
+  border-color: var(--cyan);
+  background: var(--cyan-dim);
+}
+
+.btn-connect:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.btn-connect.connecting {
+  color: var(--yellow);
+  border-color: rgba(251, 191, 36, 0.4);
+  background: rgba(251, 191, 36, 0.06);
+  animation: btn-pulse 1.1s ease-in-out infinite;
+}
+
+.btn-connect.connected {
+  color: var(--red);
+  border-color: rgba(248, 113, 113, 0.35);
+  background: rgba(248, 113, 113, 0.06);
+}
+
+.btn-connect.connected:hover:not(:disabled) {
+  background: rgba(248, 113, 113, 0.12);
+}
+
+@keyframes btn-pulse {
+  0%, 100% { opacity: 1; }
+  50%       { opacity: 0.55; }
+}
+
+/* ── Mode badge ─────────────────────────────────────── */
+.badge-mode {
+  font-family: var(--font-mono);
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 1.8px;
+  color: var(--text-2);
+  border: 1px solid var(--border-hi);
+  background: transparent;
+  padding: 4px 9px;
+  border-radius: var(--r-sm);
+  transition: color 0.3s, border-color 0.3s, background 0.3s;
+}
+
+.badge-mode.connecting {
+  color: var(--yellow);
+  border-color: rgba(251, 191, 36, 0.4);
+  background: rgba(251, 191, 36, 0.08);
+}
+
+.badge-mode.live {
+  color: var(--green);
+  border-color: rgba(52, 211, 153, 0.35);
+  background: rgba(52, 211, 153, 0.07);
+}
+
+/* ── Session timer ──────────────────────────────────────── */
+.session-timer {
+  display: none;
+  font-family: var(--font-mono);
+  font-size: 11px;
+  font-weight: 500;
+  letter-spacing: 0.5px;
+  color: var(--green);
+  border: 1px solid rgba(52, 211, 153, 0.25);
+  background: rgba(52, 211, 153, 0.05);
+  padding: 4px 10px;
+  border-radius: var(--r-sm);
+  white-space: nowrap;
+}
+
+.session-timer.visible {
+  display: inline-flex;
+  align-items: center;
+}
+
+/* ─────────────────────────────────────────────────────────────
+   Main
+───────────────────────────────────────────────────────────── */
+.main {
+  flex: 1;
+  padding: 28px 0 32px;
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+/* ─────────────────────────────────────────────────────────────
+   Config panel
+───────────────────────────────────────────────────────────── */
+.config-panel {
+  display: flex;
+  align-items: center;
+  gap: 0;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--r-md);
+  padding: 16px 22px;
+  flex-wrap: wrap;
+  gap: 16px;
+}
+
+.config-divider {
+  width: 1px;
+  height: 36px;
+  background: var(--border);
+  flex-shrink: 0;
+}
+
+.config-item {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.config-item label {
+  font-size: 10px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+  color: var(--text-2);
+}
+
+.input-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.input-row input[type="number"] {
+  width: 88px;
+  background: var(--bg);
+  border: 1px solid var(--border);
+  color: var(--text-1);
+  font-family: var(--font-mono);
+  font-size: 15px;
+  padding: 7px 11px;
+  border-radius: var(--r-sm);
+  outline: none;
+  transition: border-color 0.15s, box-shadow 0.15s;
+  appearance: textfield;
+  -moz-appearance: textfield;
+}
+
+.input-row input[type="number"]::-webkit-inner-spin-button,
+.input-row input[type="number"]::-webkit-outer-spin-button {
+  -webkit-appearance: none;
+}
+
+.input-row input[type="number"]:focus {
+  border-color: var(--cyan);
+  box-shadow: 0 0 0 3px var(--cyan-dim);
+}
+
+.unit {
+  font-size: 12px;
+  color: var(--text-2);
+}
+
+.config-stats {
+  font-size: 11px;
+  font-family: var(--font-mono);
+  color: var(--text-3);
+  white-space: nowrap;
+}
+
+.config-actions {
+  margin-left: auto;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.btn-alterar {
+  background: transparent;
+  border: 1px solid var(--border-hi);
+  color: var(--text-2);
+  font-family: var(--font-sans);
+  font-size: 11px;
+  font-weight: 500;
+  padding: 6px 14px;
+  border-radius: var(--r-sm);
+  cursor: pointer;
+  letter-spacing: 0.2px;
+  transition: color 0.15s, border-color 0.15s, background 0.15s;
+  white-space: nowrap;
+}
+
+.btn-alterar:hover {
+  color: var(--text-1);
+  border-color: var(--cyan);
+  background: var(--cyan-dim);
+}
+
+.btn-alterar.editing {
+  color: var(--green);
+  border-color: rgba(52, 211, 153, 0.45);
+  background: rgba(52, 211, 153, 0.07);
+}
+
+/* ── Export button ─────────────────────────────────────────── */
+.btn-export {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  background: transparent;
+  border: 1px solid var(--border-hi);
+  color: var(--text-2);
+  font-family: var(--font-sans);
+  font-size: 11px;
+  font-weight: 500;
+  padding: 6px 14px;
+  border-radius: var(--r-sm);
+  cursor: pointer;
+  letter-spacing: 0.2px;
+  transition: color 0.15s, border-color 0.15s, background 0.15s;
+  white-space: nowrap;
+}
+
+.btn-export:hover {
+  color: var(--text-1);
+  border-color: var(--cyan);
+  background: var(--cyan-dim);
+}
+
+.btn-export:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+
+/* ── Readonly input (locked state) ────────────────────────── */
+.input-row input[type="number"]:read-only {
+  cursor: default;
+  border-color: transparent;
+  background: transparent;
+  color: var(--text-1);
+  pointer-events: none;
+}
+
+.input-row input[type="number"]:read-only:focus {
+  border-color: transparent;
+  box-shadow: none;
+}
+
+/* ─────────────────────────────────────────────────────────────
+   Metrics grid
+───────────────────────────────────────────────────────────── */
+.metrics-grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 14px;
+}
+
+@media (max-width: 860px) {
+  .metrics-grid { grid-template-columns: repeat(2, 1fr); }
+}
+@media (max-width: 480px) {
+  .metrics-grid { grid-template-columns: 1fr; }
+  .config-divider { display: none; }
+}
+
+/* ─────────────────────────────────────────────────────────────
+   Card
+───────────────────────────────────────────────────────────── */
+.card {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--r-lg);
+  padding: 20px 20px 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  position: relative;
+  transition: border-color 0.2s;
+}
+
+.card-label {
+  font-size: 10px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+  color: var(--text-2);
+}
+
+.card-value-row {
+  display: flex;
+  align-items: baseline;
+  gap: 6px;
+  margin-top: 6px;
+}
+
+.card-value {
+  font-family: var(--font-mono);
+  font-size: 44px;
+  font-weight: 700;
+  line-height: 1;
+  color: var(--text-1);
+  letter-spacing: -2px;
+  font-variant-numeric: tabular-nums;
+  transition: opacity 0.2s;
+}
+
+.card-value.flash {
+  animation: val-flash 0.35s ease;
+}
+
+@keyframes val-flash {
+  0%   { opacity: 1;    }
+  30%  { opacity: 0.25; }
+  100% { opacity: 1;    }
+}
+
+.card-unit {
+  font-size: 13px;
+  color: var(--text-2);
+  letter-spacing: 0;
+}
+
+.card-hint {
+  display: block;
+  font-size: 10px;
+  color: var(--text-3);
+  margin-top: 8px;
+  font-family: var(--font-mono);
+}
+
+/* ── Stress bar ─────────────────────────────────── */
+.stress-track {
+  height: 3px;
+  background: var(--border);
+  border-radius: 2px;
+  margin-top: 10px;
+  overflow: hidden;
+}
+
+.stress-fill {
+  height: 100%;
+  width: 0%;
+  border-radius: 2px;
+  transition: width 0.6s ease, background-color 0.5s ease;
+  background: var(--green);
+}
+
+/* ── SQI card (with dynamic state classes) ─────── */
+.card--sqi .card-value {
+  color: var(--green);
+  transition: color 0.4s;
+}
+
+/* SQI gauge bar */
+.sqi-gauge {
+  height: 3px;
+  background: var(--border);
+  border-radius: 2px;
+  margin-top: 10px;
+  overflow: hidden;
+}
+
+.sqi-gauge-fill {
+  height: 100%;
+  width: 0%;
+  border-radius: 2px;
+  background: var(--green);
+  transition: width 0.6s ease, background-color 0.5s ease;
+}
+
+/* warning: SQI 70–84% */
+.card--sqi.sqi-warn  { border-color: rgba(251, 191, 36, 0.22); }
+.card--sqi.sqi-warn  .card-value    { color: var(--yellow); }
+.card--sqi.sqi-warn  .sqi-gauge-fill { background: var(--yellow); }
+
+/* danger: SQI < 70% */
+.card--sqi.sqi-danger { border-color: rgba(248, 113, 113, 0.22); }
+.card--sqi.sqi-danger .card-value     { color: var(--red); }
+.card--sqi.sqi-danger .sqi-gauge-fill { background: var(--red); }
+
+/* countdown text */
+.sqi-countdown {
+  transition: color 0.3s;
+}
+
+/* ─────────────────────────────────────────────────────────────
+   Chart section
+───────────────────────────────────────────────────────────── */
+.chart-section {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--r-lg);
+  padding: 18px 22px 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  position: relative;
+}
+
+.chart-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.chart-title {
+  font-size: 10px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+  color: var(--text-2);
+}
+
+.chart-meta {
+  font-size: 11px;
+  font-family: var(--font-mono);
+  color: var(--text-3);
+}
+
+.chart-wrap {
+  position: relative;
+  height: 220px;
+  overflow-x: auto;
+  overflow-y: hidden;
+}
+
+/* thin scrollbar so it doesn't eat into chart height */
+.chart-wrap::-webkit-scrollbar        { height: 4px; }
+.chart-wrap::-webkit-scrollbar-track  { background: transparent; }
+.chart-wrap::-webkit-scrollbar-thumb  { background: #2d2d33; border-radius: 2px; }
+.chart-wrap::-webkit-scrollbar-thumb:hover { background: #3f3f46; }
+
+
+
+#rmssd-chart {
+  display: block;
+  width: 100%;
+  height: 100%;
+}
+
+.chart-placeholder {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--text-3);
+  font-size: 12px;
+  pointer-events: none;
+  transition: opacity 0.4s;
+}
+
+.chart-placeholder.hidden {
+  opacity: 0;
+}
+
+/* ── Window timeline (compact height override) ─────────────── */
+.window-timeline-wrap {
+  height: 96px;
+}
+
+/* ── Snap-to-live button ───────────────────────────────────── */
+.btn-snap-live {
+  position: absolute;
+  bottom: 30px;
+  right: 26px;
+  z-index: 10;
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  background: var(--surface-hi);
+  border: 1px solid var(--border-hi);
+  color: var(--cyan);
+  font-family: var(--font-mono);
+  font-size: 10px;
+  font-weight: 600;
+  letter-spacing: 0.6px;
+  padding: 4px 10px;
+  border-radius: var(--r-sm);
+  cursor: pointer;
+  transition: background 0.15s, border-color 0.15s, box-shadow 0.15s;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.4);
+  white-space: nowrap;
+}
+
+.btn-snap-live:hover {
+  background: var(--cyan-dim);
+  border-color: var(--cyan);
+  box-shadow: 0 2px 12px rgba(34,211,238,0.15);
+}
+
+.btn-snap-live.hidden {
+  display: none;
+}
+
+/* window timeline snap button sits inside the track area */
+.window-timeline-wrap ~ .btn-snap-live {
+  bottom: 44px;
+}
+
+/* ─────────────────────────────────────────────────────────────
+   Footer
+───────────────────────────────────────────────────────────── */
+.footer {
+  padding: 14px 0 20px;
+  border-top: 1px solid var(--border);
+  font-size: 11px;
+  color: var(--text-3);
+  text-align: center;
+  letter-spacing: 0.3px;
+}
+
+/* ─────────────────────────────────────────────────────────────
+   Protocol button  (header-right)
+───────────────────────────────────────────────────────────── */
+.btn-protocol {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  background: transparent;
+  border: 1px solid var(--border-hi);
+  color: var(--text-2);
+  font-family: var(--font-sans);
+  font-size: 12px;
+  font-weight: 500;
+  padding: 7px 14px;
+  border-radius: var(--r-sm);
+  cursor: pointer;
+  transition: color 0.15s, border-color 0.15s, background 0.15s;
+  white-space: nowrap;
+}
+
+.btn-protocol:hover {
+  color: var(--text-1);
+  border-color: var(--cyan);
+  background: var(--cyan-dim);
+}
+
+/* ─────────────────────────────────────────────────────────────
+   Modal overlay
+───────────────────────────────────────────────────────────── */
+.modal-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.72);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+  padding: 16px;
+  backdrop-filter: blur(2px);
+}
+
+.modal-overlay.hidden {
+  display: none;
+}
+
+/* ─────────────────────────────────────────────────────────────
+   Modal box
+───────────────────────────────────────────────────────────── */
+.modal {
+  background: var(--surface);
+  border: 1px solid var(--border-hi);
+  border-radius: var(--r-lg);
+  width: 100%;
+  max-width: 460px;
+  display: flex;
+  flex-direction: column;
+  box-shadow: 0 24px 64px rgba(0, 0, 0, 0.6);
+}
+
+.modal-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 20px 24px 16px;
+  border-bottom: 1px solid var(--border);
+}
+
+.modal-header h2 {
+  font-size: 15px;
+  font-weight: 600;
+  letter-spacing: -0.2px;
+  color: var(--text-1);
+}
+
+.modal-close {
+  background: transparent;
+  border: none;
+  color: var(--text-2);
+  font-size: 18px;
+  line-height: 1;
+  cursor: pointer;
+  padding: 2px 6px;
+  border-radius: var(--r-sm);
+  transition: color 0.15s, background 0.15s;
+}
+
+.modal-close:hover {
+  color: var(--text-1);
+  background: var(--surface-hi);
+}
+
+.modal-body {
+  padding: 20px 24px;
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+/* ── BPM field ──────────────────────────────────────────────── */
+.modal-field {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.modal-field > label {
+  font-size: 10px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+  color: var(--text-2);
+}
+
+.modal-field small {
+  font-size: 11px;
+  color: var(--text-3);
+  font-family: var(--font-mono);
+}
+
+/* ── Phase rows ─────────────────────────────────────────────── */
+.modal-section-label {
+  display: block;
+  font-size: 10px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+  color: var(--text-2);
+  margin-bottom: 10px;
+}
+
+.modal-phase-grid {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.modal-phase-item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.modal-phase-item > label {
+  font-size: 13px;
+  color: var(--text-1);
+  flex: 1;
+}
+
+.modal-phase-input-wrap {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.modal-phase-input-wrap input[type="number"],
+.modal-phase-item input[type="number"] {
+  width: 72px;
+  background: var(--bg);
+  border: 1px solid var(--border);
+  color: var(--text-1);
+  font-family: var(--font-mono);
+  font-size: 14px;
+  padding: 6px 10px;
+  border-radius: var(--r-sm);
+  outline: none;
+  text-align: right;
+  transition: border-color 0.15s, box-shadow 0.15s;
+  appearance: textfield;
+  -moz-appearance: textfield;
+}
+
+.modal-phase-input-wrap input[type="number"]::-webkit-inner-spin-button,
+.modal-phase-input-wrap input[type="number"]::-webkit-outer-spin-button,
+.modal-phase-item input[type="number"]::-webkit-inner-spin-button,
+.modal-phase-item input[type="number"]::-webkit-outer-spin-button {
+  -webkit-appearance: none;
+}
+
+.modal-phase-input-wrap input[type="number"]:focus,
+.modal-phase-item input[type="number"]:focus {
+  border-color: var(--cyan);
+  box-shadow: 0 0 0 3px var(--cyan-dim);
+}
+
+.modal-phase-unit {
+  font-size: 12px;
+  color: var(--text-2);
+  min-width: 10px;
+}
+
+/* ── Footer / start button ──────────────────────────────────── */
+.modal-footer {
+  padding: 16px 24px 20px;
+  border-top: 1px solid var(--border);
+  display: flex;
+  justify-content: flex-end;
+}
+
+.btn-start-protocol {
+  background: var(--cyan);
+  border: none;
+  color: #000;
+  font-family: var(--font-sans);
+  font-size: 13px;
+  font-weight: 600;
+  padding: 9px 22px;
+  border-radius: var(--r-sm);
+  cursor: pointer;
+  transition: opacity 0.15s, box-shadow 0.15s;
+}
+
+.btn-start-protocol:hover {
+  opacity: 0.88;
+  box-shadow: 0 0 0 3px var(--cyan-dim);
+}
+
+/* ─────────────────────────────────────────────────────────────
+   Protocol progress bar
+───────────────────────────────────────────────────────────── */
+.protocol-bar {
+  display: flex;
+  gap: 4px;
+  height: 56px;
+}
+
+.protocol-bar.hidden {
+  display: none;
+}
+
+/* Individual phase segment */
+.protocol-phase {
+  position: relative;
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+  border: 1px solid var(--border);
+  border-radius: var(--r-sm);
+  background: var(--surface);
+  transition: border-color 0.3s, opacity 0.4s;
+}
+
+/* Fill overlay that grows left → right */
+.protocol-phase-fill {
+  position: absolute;
+  inset: 0;
+  width: 0%;
+  height: 100%;
+  /* color per variant */
+}
+
+/* Text layer sits above the fill */
+.protocol-phase-content {
+  position: relative;
+  z-index: 2;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  height: 100%;
+  padding: 0 10px;
+  gap: 3px;
+  pointer-events: none;
+}
+
+.protocol-phase-label {
+  font-size: 9px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.9px;
+  color: var(--text-2);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  transition: color 0.2s;
+}
+
+.protocol-phase-time {
+  font-family: var(--font-mono);
+  font-size: 15px;
+  font-weight: 700;
+  letter-spacing: -0.5px;
+  color: var(--text-3);
+  font-variant-numeric: tabular-nums;
+  line-height: 1;
+  transition: color 0.2s;
+}
+
+/* ── Variant fill colours ───────────────────────────────────── */
+.protocol-phase[data-variant="base"]     .protocol-phase-fill { background: rgba(113, 113, 122, 0.15); }
+.protocol-phase[data-variant="guide"]    .protocol-phase-fill { background: var(--cyan-dim); }
+.protocol-phase[data-variant="stressor"] .protocol-phase-fill { background: var(--red-dim); }
+.protocol-phase[data-variant="rest"]     .protocol-phase-fill { background: var(--green-dim); }
+.protocol-phase[data-variant="move"]     .protocol-phase-fill { background: rgba(167, 139, 250, 0.14); }
+.protocol-phase[data-variant="silence"]  .protocol-phase-fill {
+  background: repeating-linear-gradient(
+    -45deg,
+    transparent 0px,
+    transparent 4px,
+    rgba(255, 255, 255, 0.04) 4px,
+    rgba(255, 255, 255, 0.04) 5px
+  );
+}
+
+/* ── Active state ───────────────────────────────────────────── */
+.protocol-phase.proto-active {
+  border-color: var(--text-3);
+}
+.protocol-phase[data-variant="guide"].proto-active    { border-color: var(--cyan); }
+.protocol-phase[data-variant="stressor"].proto-active { border-color: var(--red); }
+.protocol-phase[data-variant="rest"].proto-active     { border-color: var(--green); }
+.protocol-phase[data-variant="move"].proto-active     { border-color: #a78bfa; }
+.protocol-phase[data-variant="silence"].proto-active  { border-color: var(--text-2); }
+
+.protocol-phase.proto-active .protocol-phase-label { color: var(--text-1); }
+.protocol-phase.proto-active .protocol-phase-time  { color: var(--text-1); }
+.protocol-phase[data-variant="guide"].proto-active    .protocol-phase-time { color: var(--cyan); }
+.protocol-phase[data-variant="stressor"].proto-active .protocol-phase-time { color: var(--red); }
+.protocol-phase[data-variant="rest"].proto-active     .protocol-phase-time { color: var(--green); }
+.protocol-phase[data-variant="move"].proto-active     .protocol-phase-time { color: #a78bfa; }
+
+/* ── Done (past) state ──────────────────────────────────────── */
+.protocol-phase.proto-done {
+  opacity: 0.38;
+}

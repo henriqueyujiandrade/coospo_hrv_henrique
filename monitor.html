@@ -1,0 +1,762 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Monitor Cardiorrespiratório</title>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Space+Mono:wght@400;700&family=Syne:wght@400;600;800&display=swap');
+:root{
+  --bg:#07090f;--surface:#0d1117;--surface2:#131c28;--border:rgba(255,255,255,0.07);
+  --ecg:#00e5a0;--resp:#3b9eff;--trig:#ff6b3b;--text:#dde8ff;--muted:#4a6080;
+  --mono:'Space Mono',monospace;--sans:'Syne',sans-serif;
+}
+*{box-sizing:border-box;margin:0;padding:0}
+body{background:var(--bg);color:var(--text);font-family:var(--sans);min-height:100vh}
+body::before{content:'';position:fixed;inset:0;pointer-events:none;
+  background-image:linear-gradient(rgba(59,158,255,.025) 1px,transparent 1px),
+  linear-gradient(90deg,rgba(59,158,255,.025) 1px,transparent 1px);
+  background-size:48px 48px;z-index:0}
+
+header{position:sticky;top:0;z-index:100;padding:14px 24px;
+  border-bottom:1px solid var(--border);background:rgba(7,9,15,.92);
+  backdrop-filter:blur(16px);display:flex;align-items:center;
+  justify-content:space-between;flex-wrap:wrap;gap:10px}
+header h1{font-size:13px;font-weight:800;letter-spacing:.14em;text-transform:uppercase}
+header h1 span{color:var(--ecg)}
+.hbadges{display:flex;gap:8px;flex-wrap:wrap;align-items:center}
+
+main{position:relative;z-index:1;max-width:1440px;margin:0 auto;
+  padding:18px 18px 48px;display:flex;flex-direction:column;gap:14px}
+
+.card{background:var(--surface);border:1px solid var(--border);border-radius:16px;overflow:hidden}
+.ch{padding:11px 16px;border-bottom:1px solid var(--border);
+  display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:8px}
+.ct{font-size:10px;font-weight:700;letter-spacing:.14em;text-transform:uppercase;
+  color:var(--muted);display:flex;align-items:center;gap:7px}
+.cb{padding:14px 16px}
+
+.dot{width:7px;height:7px;border-radius:50%;display:inline-block;flex-shrink:0}
+.de{background:var(--ecg);box-shadow:0 0 7px var(--ecg)}
+.dr{background:var(--resp);box-shadow:0 0 7px var(--resp)}
+.dt{background:var(--trig);box-shadow:0 0 7px var(--trig)}
+
+button{font-family:var(--mono);font-size:10px;font-weight:700;letter-spacing:.06em;
+  padding:7px 13px;border-radius:9px;border:1px solid var(--border);
+  background:var(--surface2);color:var(--text);cursor:pointer;transition:all .15s;white-space:nowrap}
+button:hover:not(:disabled){border-color:rgba(255,255,255,.2);background:#1a2840}
+button:disabled{opacity:.32;cursor:not-allowed}
+.bp{background:rgba(0,229,160,.1);border-color:rgba(0,229,160,.3);color:var(--ecg)}
+.bp:hover:not(:disabled){background:rgba(0,229,160,.18)}
+.brs{background:rgba(59,158,255,.1);border-color:rgba(59,158,255,.3);color:var(--resp)}
+.brs:hover:not(:disabled){background:rgba(59,158,255,.18)}
+.bex{background:rgba(255,107,59,.1);border-color:rgba(255,107,59,.3);color:var(--trig)}
+.bex:hover:not(:disabled){background:rgba(255,107,59,.18)}
+
+.badge{font-family:var(--mono);font-size:10px;font-weight:700;padding:4px 10px;
+  border-radius:20px;border:1px solid;letter-spacing:.05em}
+.boff{border-color:var(--muted);color:var(--muted)}
+.bon{border-color:var(--ecg);color:var(--ecg);background:rgba(0,229,160,.08)}
+.bron{border-color:var(--resp);color:var(--resp);background:rgba(59,158,255,.08)}
+.bton{border-color:var(--trig);color:var(--trig);background:rgba(255,107,59,.1);
+  animation:tpulse 1s ease-in-out infinite}
+@keyframes tpulse{0%,100%{opacity:1}50%{opacity:.5}}
+
+.row{display:flex;gap:9px;align-items:center;flex-wrap:wrap}
+input[type=number],input[type=text]{font-family:var(--mono);font-size:11px;
+  width:88px;padding:6px 9px;border-radius:8px;border:1px solid var(--border);
+  background:var(--surface2);color:var(--text)}
+label{font-size:11px;color:var(--muted)}
+
+.kgrid{display:grid;grid-template-columns:repeat(auto-fit,minmax(120px,1fr));gap:8px}
+.kpi{background:var(--surface2);border:1px solid var(--border);border-radius:12px;
+  padding:10px 12px;display:flex;flex-direction:column;gap:3px}
+.kl{font-size:9px;font-weight:700;letter-spacing:.12em;text-transform:uppercase;color:var(--muted)}
+.kv{font-family:var(--mono);font-size:22px;font-weight:700;line-height:1}
+.ku{font-size:10px;color:var(--muted);font-family:var(--mono)}
+
+.two{display:grid;grid-template-columns:1fr 1fr;gap:14px}
+@media(max-width:860px){.two{grid-template-columns:1fr}}
+
+canvas{width:100%;display:block;border-radius:9px;background:var(--bg);border:1px solid var(--border)}
+.cwrap{position:relative}
+.clabel{position:absolute;top:8px;left:11px;font-family:var(--mono);font-size:10px;color:var(--muted);pointer-events:none}
+
+.bars{display:grid;grid-template-columns:repeat(3,1fr);gap:9px;margin-top:12px}
+.bar{background:var(--surface2);border:1px solid var(--border);border-radius:12px;
+  padding:12px;position:relative;overflow:hidden;min-height:78px;
+  display:flex;flex-direction:column;justify-content:space-between}
+.bfill{position:absolute;bottom:0;left:0;right:0;height:0;border-radius:0 0 12px 12px;transition:height .4s ease}
+.bfr{background:rgba(0,229,160,.15)}
+.bfs{background:rgba(59,158,255,.15)}
+.bfp{background:rgba(255,107,59,.15)}
+.bn{font-size:9px;font-weight:700;letter-spacing:.12em;text-transform:uppercase;color:var(--muted);position:relative;z-index:1}
+.bv{font-family:var(--mono);font-size:20px;font-weight:700;position:relative;z-index:1}
+
+.log{background:var(--bg);border:1px solid var(--border);border-radius:9px;
+  font-family:var(--mono);font-size:10px;color:#3a6050;padding:10px 12px;
+  min-height:90px;max-height:140px;overflow-y:auto;white-space:pre-wrap}
+
+.tlamp{width:11px;height:11px;border-radius:50%;background:var(--muted);transition:all .1s;flex-shrink:0}
+.tlamp.on{background:var(--trig);box-shadow:0 0 10px var(--trig)}
+
+.legend{display:flex;gap:14px;flex-wrap:wrap}
+.li{display:flex;align-items:center;gap:6px;font-size:10px;color:var(--muted);font-family:var(--mono)}
+.ll{width:18px;height:2px;border-radius:2px}
+
+/* Modal */
+.overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,.75);
+  backdrop-filter:blur(8px);z-index:200;align-items:center;justify-content:center}
+.overlay.open{display:flex}
+.modal{background:var(--surface);border:1px solid rgba(255,255,255,.1);border-radius:18px;
+  padding:26px;width:440px;max-width:95vw;box-shadow:0 28px 70px rgba(0,0,0,.7)}
+.modal h2{font-size:14px;font-weight:800;letter-spacing:.1em;text-transform:uppercase;margin-bottom:18px}
+.msec{margin-bottom:16px}
+.mst{font-size:9px;font-weight:700;letter-spacing:.14em;text-transform:uppercase;color:var(--muted);
+  margin-bottom:10px;padding-bottom:6px;border-bottom:1px solid var(--border);display:flex;align-items:center;gap:7px}
+.cbl{display:flex;flex-direction:column;gap:8px}
+.cbi{display:flex;align-items:center;gap:9px;cursor:pointer;font-size:13px}
+.cbi input[type=checkbox]{width:15px;height:15px;accent-color:var(--ecg);cursor:pointer}
+.mfoot{display:flex;gap:9px;justify-content:flex-end;margin-top:20px}
+
+::-webkit-scrollbar{width:3px;height:3px}
+::-webkit-scrollbar-thumb{background:var(--border);border-radius:3px}
+</style>
+</head>
+<body>
+
+<header>
+  <h1>Monitor <span>Cardio</span>respiratório</h1>
+  <div class="hbadges">
+    <span class="badge boff" id="statusBLE">● ECG BLE: OFF</span>
+    <span class="badge boff" id="statusSerial">● RESP Serial: OFF</span>
+    <span class="badge bton" id="trigBadge" style="display:none">▲ INSPIRAÇÃO</span>
+  </div>
+</header>
+
+<main>
+
+  <!-- Controles -->
+  <div class="card">
+    <div class="ch"><span class="ct"><span class="dot de"></span>Conexões</span>
+      <button class="bex" id="exportBtn">⬇ Exportar CSV</button>
+    </div>
+    <div class="cb">
+      <div class="row" style="gap:20px;flex-wrap:wrap">
+        <div style="display:flex;flex-direction:column;gap:8px">
+          <div class="row">
+            <button class="bp" id="connectBtn">🔗 ECG via BLE</button>
+            <button id="disconnectBtn" disabled>⛔ Desconectar BLE</button>
+          </div>
+          <div class="row">
+            <label>Prefixo:</label><input type="text" id="namePrefix" value="HW9">
+            <label>Janela (s):</label><input type="number" id="winSec" min="20" max="600" step="10" value="120">
+            <label>pNN thr:</label><input type="number" id="pnnThr" min="10" max="200" step="5" value="50">
+            <span style="font-family:var(--mono);font-size:10px;color:var(--muted)">Bat: <span id="battery">—</span>% &nbsp;Pkts: <span id="pkts">0</span></span>
+          </div>
+        </div>
+        <div style="width:1px;background:var(--border);align-self:stretch"></div>
+        <div style="display:flex;flex-direction:column;gap:8px">
+          <div class="row">
+            <button class="brs" id="connectSerialBtn">🔌 Respiração via Serial</button>
+            <button id="disconnectSerialBtn" disabled>⛔ Desconectar Serial</button>
+          </div>
+          <div style="font-family:var(--mono);font-size:10px;color:var(--muted)">
+            ⚠ Requer Chrome ou Edge (Web Serial API)
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- KPIs ECG -->
+  <div class="card">
+    <div class="ch"><span class="ct"><span class="dot de"></span>HRV — Métricas</span></div>
+    <div class="cb">
+      <div class="kgrid">
+        <div class="kpi"><span class="kl">RR atual</span><span class="kv" id="rrNow">—</span><span class="ku">ms</span></div>
+        <div class="kpi"><span class="kl">BPM</span><span class="kv" id="bpmRR">—</span><span class="ku">bpm</span></div>
+        <div class="kpi"><span class="kl">RMSSD</span><span class="kv" id="rmssd">—</span><span class="ku">ms</span></div>
+        <div class="kpi"><span class="kl">SDNN</span><span class="kv" id="sdnn">—</span><span class="ku">ms</span></div>
+        <div class="kpi"><span class="kl">pNN50</span><span class="kv" id="pnn50">—</span><span class="ku">%</span></div>
+        <div class="kpi"><span class="kl">Duração</span><span class="kv" id="ecgDur" style="font-size:16px">00:00:00</span><span class="ku">h:min:s</span></div>
+      </div>
+      <div class="bars">
+        <div class="bar"><div class="bfill bfr" id="barRmssd"></div><span class="bn">RMSSD</span><span class="bv" id="valRmssd">—</span></div>
+        <div class="bar"><div class="bfill bfs" id="barSdnn"></div><span class="bn">SDNN</span><span class="bv" id="valSdnn">—</span></div>
+        <div class="bar"><div class="bfill bfp" id="barPnn50"></div><span class="bn">pNN50</span><span class="bv" id="valPnn50">—</span></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- KPIs Respiração -->
+  <div class="card">
+    <div class="ch">
+      <span class="ct"><span class="dot dr"></span>Respiração — Métricas</span>
+      <div class="row">
+        <div class="tlamp" id="tlamp"></div>
+        <span id="tlabel" style="font-family:var(--mono);font-size:10px;color:var(--muted)">TRIGGER: LOW</span>
+      </div>
+    </div>
+    <div class="cb">
+      <div class="kgrid">
+        <div class="kpi"><span class="kl">Leitura</span><span class="kv" id="respV">—</span><span class="ku">V</span></div>
+        <div class="kpi"><span class="kl">Trigger</span><span class="kv" id="respT">0</span><span class="ku">estado</span></div>
+        <div class="kpi"><span class="kl">Duração</span><span class="kv" id="respDur" style="font-size:16px">00:00:00</span><span class="ku">h:min:s</span></div>
+        <div class="kpi"><span class="kl">Ciclos</span><span class="kv" id="respCyc">0</span><span class="ku">trigger</span></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Gráfico Respiração -->
+  <div class="card">
+    <div class="ch">
+      <span class="ct"><span class="dot dr"></span>Sinal Respiratório &amp; Trigger</span>
+      <div class="legend">
+        <div class="li"><div class="ll" style="background:var(--resp)"></div>Leitura (V)</div>
+        <div class="li"><div class="ll" style="background:var(--trig)"></div>Trigger (0/1)</div>
+      </div>
+    </div>
+    <div class="cb">
+      <div class="cwrap">
+        <canvas id="respCanvas" height="200"></canvas>
+        <div class="clabel">Respiração — janela 30s</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Gráficos ECG -->
+  <div class="card">
+    <div class="ch"><span class="ct"><span class="dot de"></span>HRV — Gráficos</span></div>
+    <div class="cb">
+      <div class="two">
+        <div>
+          <div style="font-size:10px;color:var(--muted);margin-bottom:7px;font-family:var(--mono)">Taquograma (RR ms × tempo)</div>
+          <div class="cwrap"><canvas id="tachogram" height="200"></canvas></div>
+        </div>
+        <div>
+          <div style="font-size:10px;color:var(--muted);margin-bottom:7px;font-family:var(--mono)">Poincaré (RRn × RRn+1) — SD1/SD2</div>
+          <div class="cwrap"><canvas id="poincare" height="200"></canvas></div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Log -->
+  <div class="card">
+    <div class="ch"><span class="ct">Log</span>
+      <button id="clearLogBtn">🧹 Limpar</button>
+    </div>
+    <div class="cb"><div class="log" id="log"></div></div>
+  </div>
+
+</main>
+
+<!-- Modal Export -->
+<div class="overlay" id="exportModal">
+  <div class="modal">
+    <h2>⬇ Exportar CSV</h2>
+    <div class="msec">
+      <div class="mst"><span class="dot dr"></span>Respiração (Serial)</div>
+      <div class="cbl">
+        <label class="cbi"><input type="checkbox" id="ex_rt" checked>Timestamp (ms)</label>
+        <label class="cbi"><input type="checkbox" id="ex_rv" checked>Leitura (V)</label>
+        <label class="cbi"><input type="checkbox" id="ex_rtr" checked>Trigger (0/1)</label>
+      </div>
+    </div>
+    <div class="msec">
+      <div class="mst"><span class="dot de"></span>ECG / HRV (BLE)</div>
+      <div class="cbl">
+        <label class="cbi"><input type="checkbox" id="ex_et" checked>Timestamp (ms)</label>
+        <label class="cbi"><input type="checkbox" id="ex_err" checked>RR Interval (ms)</label>
+        <label class="cbi"><input type="checkbox" id="ex_ermssd" checked>RMSSD</label>
+        <label class="cbi"><input type="checkbox" id="ex_esdnn" checked>SDNN</label>
+        <label class="cbi"><input type="checkbox" id="ex_epnn" checked>pNN50</label>
+      </div>
+    </div>
+    <div class="mfoot">
+      <button id="cancelExport">Cancelar</button>
+      <button class="bex" id="confirmExport">⬇ Baixar CSV</button>
+    </div>
+  </div>
+</div>
+
+<script>
+const $=id=>document.getElementById(id);
+const fmt=(x,d=1)=>(x==null||isNaN(x))?'—':Number(x).toFixed(d);
+
+function toHMS(ms){
+  if(!ms||ms<0)return'00:00:00';
+  const s=Math.floor(ms/1000);
+  const h=Math.floor(s/3600);
+  const m=Math.floor((s%3600)/60);
+  const sc=s%60;
+  return`${String(h).padStart(2,'0')}:${String(m).padStart(2,'0')}:${String(sc).padStart(2,'0')}`;
+}
+
+let respStartTime=null; // performance.now() quando chegou primeira amostra resp
+let ecgStartTime=null;  // performance.now() quando chegou primeiro RR
+
+// Timer display atualizado a cada segundo
+setInterval(()=>{
+  if(respStartTime!=null)
+    $('respDur').textContent=toHMS(performance.now()-respStartTime);
+  if(ecgStartTime!=null)
+    $('ecgDur').textContent=toHMS(performance.now()-ecgStartTime);
+},1000);
+
+function log(msg,c='#3a6050'){
+  const t=new Date().toLocaleTimeString();
+  const el=$('log');const d=document.createElement('div');
+  d.style.color=c;d.textContent=`${t} — ${msg}`;
+  el.appendChild(d);el.scrollTop=el.scrollHeight;
+}
+
+// ===== BLE state =====
+let device=null,server=null,hrChar=null;
+let pktCount=0;
+const rrBuf=[];   // {t_ms, rr_ms}
+const rrRaw=[];   // export: {timestamp_ms, rr_ms, rmssd, sdnn, pnn50}
+
+function winSec(){return Math.max(20,Math.min(600,Number($('winSec').value)||120));}
+function pnnThr(){return Math.max(10,Math.min(200,Number($('pnnThr').value)||50));}
+
+// ===== Serial state =====
+let serialPort=null,serialReader=null,serialActive=false;
+const respBuf=[];  // {t_ms, volts, trigger}  — janela deslizante 30s
+const respRaw=[];  // export: {timestamp_ms, volts, trigger}
+let trigCycles=0, lastTrig=0;
+const RESP_WIN=30000;
+
+// ===== BLE connect =====
+$('connectBtn').addEventListener('click',connectBLE);
+$('disconnectBtn').addEventListener('click',disconnectBLE);
+
+function setBLEStatus(s,on=false){
+  $('statusBLE').textContent=`● ECG BLE: ${s}`;
+  $('statusBLE').className='badge '+(on?'bon':'boff');
+}
+
+async function connectBLE(){
+  if(!('bluetooth' in navigator)){log('Web Bluetooth não suportado.','#ff6b3b');return;}
+  try{
+    const pfx=$('namePrefix').value.trim();
+    const opts=pfx
+      ?{filters:[{namePrefix:pfx}],optionalServices:['heart_rate','battery_service']}
+      :{acceptAllDevices:true,optionalServices:['heart_rate','battery_service']};
+    setBLEStatus('Selecionando...');
+    device=await navigator.bluetooth.requestDevice(opts);
+    device.addEventListener('gattserverdisconnected',onBLEDis);
+    setBLEStatus('Conectando...');
+    server=await device.gatt.connect();
+    setBLEStatus('Conectado',true);
+    const svc=await server.getPrimaryService('heart_rate');
+    hrChar=await svc.getCharacteristic('heart_rate_measurement');
+    await hrChar.startNotifications();
+    hrChar.addEventListener('characteristicvaluechanged',onHR);
+    try{
+      const bsvc=await server.getPrimaryService('battery_service');
+      const bc=await bsvc.getCharacteristic('battery_level');
+      const v=await bc.readValue();$('battery').textContent=v.getUint8(0);
+    }catch(_){$('battery').textContent='—';}
+    $('connectBtn').disabled=true;$('disconnectBtn').disabled=false;
+    log('BLE: conectado, notificações HRM iniciadas.','#00e5a0');
+  }catch(e){
+    log('BLE falha: '+e.message,'#ff6b3b');setBLEStatus('Desconectado');
+  }
+}
+
+function onBLEDis(){
+  setBLEStatus('Desconectado');
+  $('connectBtn').disabled=false;$('disconnectBtn').disabled=true;
+}
+
+async function disconnectBLE(){
+  try{if(hrChar)await hrChar.stopNotifications();}catch(_){}
+  try{if(device?.gatt?.connected)device.gatt.disconnect();}catch(_){}
+  onBLEDis();
+}
+
+function parseHRM(dv){
+  const f=dv.getUint8(0);
+  const hr16=(f&0x01)!==0,rrOn=(f&0x10)!==0;
+  let off=1;
+  const hr=hr16?dv.getUint16(off,true):dv.getUint8(off);off+=hr16?2:1;
+  const rrList=[];
+  if(rrOn){while(off+1<dv.byteLength){rrList.push(dv.getUint16(off,true)/1024);off+=2;}}
+  return{hr,rrList};
+}
+
+function computeHRV(rr,thr){
+  if(rr.length<2)return{rmssd:NaN,sdnn:NaN,pnn50:NaN};
+  const mean=rr.reduce((a,b)=>a+b,0)/rr.length;
+  const sdnn=Math.sqrt(rr.reduce((a,b)=>a+(b-mean)**2,0)/(rr.length-1));
+  const diffs=[];for(let i=1;i<rr.length;i++)diffs.push(rr[i]-rr[i-1]);
+  const rmssd=Math.sqrt(diffs.reduce((a,b)=>a+b*b,0)/diffs.length);
+  const pnn50=100*diffs.filter(d=>Math.abs(d)>=thr).length/diffs.length;
+  return{rmssd,sdnn,pnn50};
+}
+
+function setBar(fid,vid,val,mx){
+  const v=isFinite(val)?Math.max(0,Math.min(mx,val)):0;
+  $(fid).style.height=`${(v/mx)*100}%`;
+  $(vid).textContent=isFinite(val)?fmt(val,1):'—';
+}
+
+function onHR(ev){
+  const{rrList}=parseHRM(ev.target.value);
+  pktCount++;$('pkts').textContent=String(pktCount);
+  const now=performance.now();
+  if(ecgStartTime===null)ecgStartTime=now;
+  for(const rr_s of rrList){
+    const rr_ms=rr_s*1000;
+    rrBuf.push({t_ms:now,rr_ms});
+    const m=computeHRV(rrBuf.map(x=>x.rr_ms),pnnThr());
+    rrRaw.push({timestamp_ms:Date.now(),rr_ms,rmssd:m.rmssd,sdnn:m.sdnn,pnn50:m.pnn50});
+  }
+  const cutoff=performance.now()-winSec()*1000;
+  while(rrBuf.length&&rrBuf[0].t_ms<cutoff)rrBuf.shift();
+  const last=rrBuf[rrBuf.length-1];
+  $('rrNow').textContent=last?fmt(last.rr_ms,0):'—';
+  $('bpmRR').textContent=last?fmt(60000/last.rr_ms,0):'—';
+  const m=computeHRV(rrBuf.map(x=>x.rr_ms),pnnThr());
+  $('rmssd').textContent=fmt(m.rmssd,1);
+  $('sdnn').textContent=fmt(m.sdnn,1);
+  $('pnn50').textContent=fmt(m.pnn50,1);
+  setBar('barRmssd','valRmssd',m.rmssd,120);
+  setBar('barSdnn','valSdnn',m.sdnn,150);
+  setBar('barPnn50','valPnn50',m.pnn50,80);
+  drawTachogram();drawPoincare();
+}
+
+// ===== Serial connect =====
+$('connectSerialBtn').addEventListener('click',connectSerial);
+$('disconnectSerialBtn').addEventListener('click',disconnectSerial);
+
+function setSerialStatus(s,on=false){
+  $('statusSerial').textContent=`● RESP Serial: ${s}`;
+  $('statusSerial').className='badge '+(on?'bron':'boff');
+}
+
+async function connectSerial(){
+  if(!('serial' in navigator)){log('Web Serial API não suportada. Use Chrome ou Edge.','#ff6b3b');return;}
+  try{
+    serialPort=await navigator.serial.requestPort();
+    await serialPort.open({baudRate:115200});
+    serialActive=true;
+    $('connectSerialBtn').disabled=true;$('disconnectSerialBtn').disabled=false;
+    setSerialStatus('Conectado',true);
+    log('Serial: conectado a 115200 baud.','#3b9eff');
+    readSerial();
+  }catch(e){
+    log('Serial falha: '+e.message,'#ff6b3b');setSerialStatus('Desconectado');
+  }
+}
+
+async function disconnectSerial(){
+  serialActive=false;
+  try{if(serialReader){await serialReader.cancel();serialReader=null;}}catch(_){}
+  try{if(serialPort)await serialPort.close();}catch(_){}
+  serialPort=null;
+  $('connectSerialBtn').disabled=false;$('disconnectSerialBtn').disabled=true;
+  setSerialStatus('Desconectado');
+  log('Serial: desconectado.');
+}
+
+async function readSerial(){
+  const decoder=new TextDecoderStream();
+  serialPort.readable.pipeTo(decoder.writable);
+  const reader=decoder.readable.getReader();
+  serialReader=reader;
+  let buf='';
+  try{
+    while(serialActive){
+      const{value,done}=await reader.read();
+      if(done)break;
+      buf+=value;
+      const lines=buf.split('\n');
+      buf=lines.pop();
+      for(const line of lines){
+        const t=line.trim();
+        if(t.startsWith('RESP,')){
+          const parts=t.split(',');
+          if(parts.length>=3){
+            const volts=parseFloat(parts[1]);
+            const trig=parseInt(parts[2]);
+            if(!isNaN(volts)&&!isNaN(trig)){
+              onRespSample(volts,trig);
+            }
+          }
+        }
+      }
+    }
+  }catch(e){
+    if(serialActive)log('Serial erro: '+e.message,'#ff6b3b');
+  }
+}
+
+function onRespSample(volts,trig){
+  const now=performance.now();
+  if(respStartTime===null)respStartTime=now;
+  respBuf.push({t_ms:now,volts,trigger:trig});
+  respRaw.push({timestamp_ms:Date.now(),volts,trigger:trig});
+
+  // janela deslizante 30s
+  const cutoff=now-RESP_WIN;
+  while(respBuf.length&&respBuf[0].t_ms<cutoff)respBuf.shift();
+
+  // contagem de ciclos (borda de subida do trigger)
+  if(trig===1&&lastTrig===0){trigCycles++;$('respCyc').textContent=String(trigCycles);}
+  lastTrig=trig;
+
+  // KPIs
+  $('respV').textContent=fmt(volts,4);
+  $('respT').textContent=String(trig);
+
+  // trigger lamp
+  const lamp=$('tlamp');
+  if(trig===1){
+    lamp.classList.add('on');
+    $('tlabel').textContent='TRIGGER: HIGH ▲';
+    $('tlabel').style.color='var(--trig)';
+    $('trigBadge').style.display='';
+  } else {
+    lamp.classList.remove('on');
+    $('tlabel').textContent='TRIGGER: LOW';
+    $('tlabel').style.color='var(--muted)';
+    $('trigBadge').style.display='none';
+  }
+
+  drawResp();
+}
+
+// ===== Canvas helpers =====
+function mapV(v,a1,a2,b1,b2){const f=(v-a1)/((a2-a1)||1);return b1+Math.max(0,Math.min(1,f))*(b2-b1);}
+function dot(ctx,x,y,r){ctx.beginPath();ctx.arc(x,y,r,0,Math.PI*2);ctx.fill();}
+
+// ===== Draw Resp =====
+const respCv=$('respCanvas'),rctx=respCv.getContext('2d');
+
+function drawResp(){
+  const W=respCv.width,H=respCv.height;
+  rctx.clearRect(0,0,W,H);
+
+  if(respBuf.length<2)return;
+
+  const now=performance.now();
+  const tStart=now-RESP_WIN;
+
+  // eixo Y da leitura: 0–3.3V
+  const vMin=0,vMax=3.3;
+
+  // grid horizontal
+  for(let v=0;v<=3.3;v+=0.5){
+    const py=mapV(v,vMin,vMax,H-12,12);
+    rctx.beginPath();rctx.moveTo(0,py);rctx.lineTo(W,py);
+    rctx.strokeStyle='rgba(255,255,255,.05)';rctx.lineWidth=1;rctx.stroke();
+    rctx.fillStyle='rgba(255,255,255,.3)';rctx.font='10px Space Mono,monospace';
+    rctx.fillText(v.toFixed(1)+'V',4,py-3);
+  }
+
+  // eixo X — marcas de tempo em segundos
+  rctx.fillStyle='rgba(255,255,255,.3)';rctx.font='10px Space Mono,monospace';
+  const stepX=5000; // marca a cada 5s
+  for(let t=0;t<=RESP_WIN;t+=stepX){
+    const x=mapV(now-RESP_WIN+t,tStart,now,0,W);
+    const label=`-${Math.round((RESP_WIN-t)/1000)}s`;
+    rctx.beginPath();rctx.moveTo(x,H-14);rctx.lineTo(x,H);
+    rctx.strokeStyle='rgba(255,255,255,.08)';rctx.lineWidth=1;rctx.stroke();
+    rctx.fillText(label,x+2,H-2);
+  }
+
+  // área do trigger (fundo sombreado quando HIGH)
+  let inHigh=false;let hx=0;
+  for(let i=0;i<respBuf.length;i++){
+    const x=mapV(respBuf[i].t_ms,tStart,now,0,W);
+    if(respBuf[i].trigger===1&&!inHigh){inHigh=true;hx=x;}
+    if(respBuf[i].trigger===0&&inHigh){
+      rctx.fillStyle='rgba(255,107,59,.07)';
+      rctx.fillRect(hx,0,x-hx,H);
+      inHigh=false;
+    }
+  }
+  if(inHigh){
+    const lx=mapV(respBuf[respBuf.length-1].t_ms,tStart,now,0,W);
+    rctx.fillStyle='rgba(255,107,59,.07)';
+    rctx.fillRect(hx,0,lx-hx,H);
+  }
+
+  // linha do trigger escalada (0=bottom 12%, 1=top 88%)
+  rctx.beginPath();
+  respBuf.forEach((p,i)=>{
+    const x=mapV(p.t_ms,tStart,now,0,W);
+    const y=p.trigger===1?(H*0.06):(H*0.94);
+    if(i===0)rctx.moveTo(x,y);else rctx.lineTo(x,y);
+  });
+  rctx.lineWidth=1.5;rctx.strokeStyle='rgba(255,107,59,.7)';
+  rctx.setLineDash([4,4]);rctx.stroke();rctx.setLineDash([]);
+
+  // linha de leitura em volts
+  rctx.beginPath();
+  respBuf.forEach((p,i)=>{
+    const x=mapV(p.t_ms,tStart,now,0,W);
+    const y=mapV(p.volts,vMin,vMax,H-12,12);
+    if(i===0)rctx.moveTo(x,y);else rctx.lineTo(x,y);
+  });
+  rctx.lineWidth=2;rctx.strokeStyle='rgba(59,158,255,1)';rctx.stroke();
+}
+
+// ===== Draw Tachogram =====
+const tachCv=$('tachogram'),tctx=tachCv.getContext('2d');
+
+function drawTachogram(){
+  const W=tachCv.width,H=tachCv.height;
+  tctx.clearRect(0,0,W,H);
+  if(rrBuf.length<2)return;
+  const vals=rrBuf.map(r=>r.rr_ms);
+  const mn=Math.max(300,Math.min(...vals));
+  const mx=Math.min(1400,Math.max(...vals));
+  const now=performance.now(),start=now-winSec()*1000;
+  for(let y=Math.ceil(mn/100)*100;y<=mx;y+=100){
+    const py=mapV(y,mn,mx,H-8,8);
+    tctx.beginPath();tctx.moveTo(0,py);tctx.lineTo(W,py);
+    tctx.strokeStyle='rgba(255,255,255,.06)';tctx.lineWidth=1;tctx.stroke();
+    tctx.fillStyle='rgba(255,255,255,.35)';tctx.font='10px Space Mono,monospace';
+    tctx.fillText(`${y}ms`,5,py-3);
+  }
+  // eixo X — segundos
+  const winMs=winSec()*1000;
+  const stepXt=Math.max(10,Math.round(winSec()/6))*1000;
+  tctx.fillStyle='rgba(255,255,255,.3)';tctx.font='10px Space Mono,monospace';
+  for(let t=0;t<=winMs;t+=stepXt){
+    const x=mapV(now-winMs+t,start,now,0,W);
+    const label=`-${Math.round((winMs-t)/1000)}s`;
+    tctx.beginPath();tctx.moveTo(x,H-14);tctx.lineTo(x,H);
+    tctx.strokeStyle='rgba(255,255,255,.06)';tctx.lineWidth=1;tctx.stroke();
+    tctx.fillText(label,x+2,H-2);
+  }
+  tctx.beginPath();
+  rrBuf.forEach((p,i)=>{
+    const x=mapV(p.t_ms,start,now,0,W);
+    const y=mapV(p.rr_ms,mn,mx,H-6,6);
+    i===0?tctx.moveTo(x,y):tctx.lineTo(x,y);
+  });
+  tctx.lineWidth=2;tctx.strokeStyle='rgba(0,229,160,1)';tctx.stroke();
+}
+
+// ===== Draw Poincaré =====
+const poiCv=$('poincare'),pctx=poiCv.getContext('2d');
+
+function drawPoincare(){
+  const W=poiCv.width,H=poiCv.height;
+  pctx.clearRect(0,0,W,H);
+  if(rrBuf.length<3)return;
+  const rr=rrBuf.map(x=>x.rr_ms);
+  const mn=Math.max(300,Math.min(...rr));
+  const mx=Math.min(1400,Math.max(...rr));
+  pctx.fillStyle='rgba(0,229,160,.8)';
+  for(let i=0;i<rr.length-1;i++){
+    const x=mapV(rr[i],mn,mx,8,W-8);
+    const y=mapV(rr[i+1],mn,mx,H-8,8);
+    dot(pctx,x,y,2.5);
+  }
+  const{sd1,sd2}=calcSD1SD2(rr);
+  if(isFinite(sd1)&&isFinite(sd2)){
+    const mean=rr.reduce((a,b)=>a+b,0)/rr.length;
+    const cx=mapV(mean,mn,mx,8,W-8);
+    const cy=mapV(mean,mn,mx,H-8,8);
+    pctx.strokeStyle='rgba(255,255,255,.2)';pctx.lineWidth=1;
+    pctx.beginPath();pctx.moveTo(8,cy);pctx.lineTo(W-8,cy);pctx.stroke();
+    pctx.beginPath();pctx.moveTo(cx,8);pctx.lineTo(cx,H-8);pctx.stroke();
+    pctx.fillStyle='rgba(255,255,255,.75)';pctx.font='11px Space Mono,monospace';
+    pctx.fillText(`SD1: ${fmt(sd1,1)} ms`,10,18);
+    pctx.fillText(`SD2: ${fmt(sd2,1)} ms`,10,33);
+  }
+}
+
+function calcSD1SD2(rr){
+  if(rr.length<3)return{sd1:NaN,sd2:NaN};
+  const diffs=[];for(let i=1;i<rr.length;i++)diffs.push(rr[i]-rr[i-1]);
+  const meanRR=rr.reduce((a,b)=>a+b,0)/rr.length;
+  const sdnn=Math.sqrt(rr.reduce((a,b)=>a+(b-meanRR)**2,0)/(rr.length-1));
+  const md=diffs.reduce((a,b)=>a+b,0)/diffs.length;
+  const sdDiff=Math.sqrt(diffs.reduce((a,b)=>a+(b-md)**2,0)/(Math.max(1,diffs.length-1)));
+  const sd1=sdDiff/Math.sqrt(2);
+  const sd2=Math.sqrt(Math.max(0,2*sdnn*sdnn-(sdDiff*sdDiff)/2));
+  return{sd1,sd2};
+}
+
+// ===== Resize canvases =====
+function resizeCanvases(){
+  [respCv,tachCv,poiCv].forEach(cv=>{
+    const r=cv.getBoundingClientRect();
+    if(r.width>0){cv.width=Math.round(r.width*devicePixelRatio||r.width);}
+  });
+}
+window.addEventListener('resize',()=>{resizeCanvases();drawResp();drawTachogram();drawPoincare();});
+setTimeout(resizeCanvases,100);
+
+// ===== Export =====
+$('exportBtn').addEventListener('click',()=>$('exportModal').classList.add('open'));
+$('cancelExport').addEventListener('click',()=>$('exportModal').classList.remove('open'));
+$('clearLogBtn').addEventListener('click',()=>$('log').innerHTML='');
+
+$('confirmExport').addEventListener('click',()=>{
+  $('exportModal').classList.remove('open');
+
+  const hasResp=respRaw.length>0;
+  const hasECG=rrRaw.length>0;
+
+  if(!hasResp&&!hasECG){log('Nada para exportar.','#ff6b3b');return;}
+
+  const rCols={rt:$('ex_rt').checked,rv:$('ex_rv').checked,rtr:$('ex_rtr').checked};
+  const eCols={et:$('ex_et').checked,err:$('ex_err').checked,
+    ermssd:$('ex_ermssd').checked,esdnn:$('ex_esdnn').checked,epnn:$('ex_epnn').checked};
+
+  let csvParts=[];
+
+  if(hasResp){
+    const hdr=[];
+    if(rCols.rt)hdr.push('timestamp_ms');
+    if(rCols.rv)hdr.push('volts');
+    if(rCols.rtr)hdr.push('trigger');
+    const rows=respRaw.map(r=>{
+      const c=[];
+      if(rCols.rt)c.push(r.timestamp_ms);
+      if(rCols.rv)c.push(r.volts.toFixed(4));
+      if(rCols.rtr)c.push(r.trigger);
+      return c.join(',');
+    });
+    csvParts.push('# RESPIRACAO\n'+hdr.join(',')+'\n'+rows.join('\n'));
+  }
+
+  if(hasECG){
+    const hdr=[];
+    if(eCols.et)hdr.push('timestamp_ms');
+    if(eCols.err)hdr.push('rr_ms');
+    if(eCols.ermssd)hdr.push('rmssd');
+    if(eCols.esdnn)hdr.push('sdnn');
+    if(eCols.epnn)hdr.push('pnn50');
+    const rows=rrRaw.map(r=>{
+      const c=[];
+      if(eCols.et)c.push(r.timestamp_ms);
+      if(eCols.err)c.push(r.rr_ms.toFixed(1));
+      if(eCols.ermssd)c.push(isFinite(r.rmssd)?r.rmssd.toFixed(2):'');
+      if(eCols.esdnn)c.push(isFinite(r.sdnn)?r.sdnn.toFixed(2):'');
+      if(eCols.epnn)c.push(isFinite(r.pnn50)?r.pnn50.toFixed(2):'');
+      return c.join(',');
+    });
+    csvParts.push('# ECG_HRV\n'+hdr.join(',')+'\n'+rows.join('\n'));
+  }
+
+  const blob=new Blob([csvParts.join('\n\n')],{type:'text/csv;charset=utf-8;'});
+  const url=URL.createObjectURL(blob);
+  const a=document.createElement('a');
+  a.href=url;
+  a.download=`monitor_${new Date().toISOString().replace(/[:.]/g,'-')}.csv`;
+  document.body.appendChild(a);a.click();a.remove();URL.revokeObjectURL(url);
+  log(`CSV exportado: ${respRaw.length} amostras respiração, ${rrRaw.length} amostras ECG.`,'#00e5a0');
+});
+</script>
+</body>
+</html>

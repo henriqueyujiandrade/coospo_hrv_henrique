@@ -1,0 +1,3 @@
+Criar uma janela para mostrar os arrays entrando.
+
+Considerar os valores intervalos RR que foram excluídos pelo coospo e considerar os valores que estão excluidos por não atender o filtro de anomalias
